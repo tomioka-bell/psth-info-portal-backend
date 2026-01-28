@@ -29,6 +29,7 @@ var NewCorsMiddleware = cors.New(cors.Config{
 		"https://prospira.th.com",
 		"http://10.144.1.103",
 		"https://www.prospira.co.th",
+		"http://psth-info.psth.com",
 	}, ","),
 
 	AllowMethods: strings.Join([]string{
