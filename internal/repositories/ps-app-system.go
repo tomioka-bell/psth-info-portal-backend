@@ -1,0 +1,141 @@
+package repositories
+
+import (
+	"errors"
+	"fmt"
+
+	"gorm.io/gorm"
+
+	"backend/internal/core/domains"
+)
+
+type AppSystemRepository struct {
+	db *gorm.DB
+}
+
+func NewAppSystemRepository(db *gorm.DB) *AppSystemRepository {
+	if err := db.AutoMigrate(&domains.AppSystem{}); err != nil {
+		fmt.Printf("failed to auto migrate: %v", err)
+	}
+	return &AppSystemRepository{db: db}
+}
+
+// CreateAppSystem creates a new AppSystem
+func (r *AppSystemRepository) CreateAppSystem(org *domains.AppSystem) error {
+	result := r.db.Create(org)
+	return result.Error
+}
+
+// GetAppSystemByID retrieves AppSystem by ID
+func (r *AppSystemRepository) GetAppSystemByID(id int) (*domains.AppSystem, error) {
+	var org domains.AppSystem
+	result := r.db.Where("id = ? AND deleted_at IS NULL", id).First(&org)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, errors.New("AppSystem not found")
+		}
+		return nil, result.Error
+	}
+	return &org, nil
+}
+
+// GetAllAppSystems retrieves all AppSystems with pagination
+func (r *AppSystemRepository) GetAllAppSystems(page, pageSize int) ([]domains.AppSystem, int64, error) {
+	var AppSystems []domains.AppSystem
+	var total int64
+
+	// Get total count
+	countResult := r.db.Where("deleted_at IS NULL").Model(&domains.AppSystem{}).Count(&total)
+	if countResult.Error != nil {
+		return nil, 0, countResult.Error
+	}
+
+	// Get paginated data
+	offset := (page - 1) * pageSize
+	result := r.db.Where("deleted_at IS NULL").
+		Offset(offset).
+		Limit(pageSize).
+		Order("created_at DESC").
+		Find(&AppSystems)
+
+	return AppSystems, total, result.Error
+}
+
+// GetAppSystemsByCategory retrieves AppSystems filtered by category
+func (r *AppSystemRepository) GetAppSystemsByCategory(category string, page, pageSize int) ([]domains.AppSystem, int64, error) {
+	var AppSystems []domains.AppSystem
+	var total int64
+
+	// Get total count
+	countResult := r.db.Where("category = ? AND deleted_at IS NULL", category).Model(&domains.AppSystem{}).Count(&total)
+	if countResult.Error != nil {
+		return nil, 0, countResult.Error
+	}
+
+	// Get paginated data
+	offset := (page - 1) * pageSize
+	result := r.db.Where("category = ? AND deleted_at IS NULL", category).
+		Offset(offset).
+		Limit(pageSize).
+		Order("created_at DESC").
+		Find(&AppSystems)
+
+	return AppSystems, total, result.Error
+}
+
+// UpdateAppSystem updates an existing AppSystem
+func (r *AppSystemRepository) UpdateAppSystem(id int, updates map[string]interface{}) error {
+	result := r.db.Model(&domains.AppSystem{}).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Updates(updates)
+
+	if result.RowsAffected == 0 {
+		return errors.New("AppSystem not found or already deleted")
+	}
+	return result.Error
+}
+
+// DeleteAppSystem soft deletes an AppSystem
+func (r *AppSystemRepository) DeleteAppSystem(id int) error {
+	result := r.db.Model(&domains.AppSystem{}).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Update("deleted_at", gorm.Expr("GETUTCDATE()"))
+
+	if result.RowsAffected == 0 {
+		return errors.New("AppSystem not found or already deleted")
+	}
+	return result.Error
+}
+
+// DeleteAppSystemPermanently permanently deletes an AppSystem
+func (r *AppSystemRepository) DeleteAppSystemPermanently(id int) error {
+	result := r.db.Where("id = ?", id).Unscoped().Delete(&domains.AppSystem{})
+	if result.RowsAffected == 0 {
+		return errors.New("AppSystem not found")
+	}
+	return result.Error
+}
+
+// SearchAppSystems searches AppSystems by name or description
+func (r *AppSystemRepository) SearchAppSystems(keyword string, page, pageSize int) ([]domains.AppSystem, int64, error) {
+	var AppSystems []domains.AppSystem
+	var total int64
+
+	// Get total count
+	countResult := r.db.Where("(name LIKE ? OR desc LIKE ?) AND deleted_at IS NULL", "%"+keyword+"%", "%"+keyword+"%").
+		Model(&domains.AppSystem{}).
+		Count(&total)
+	if countResult.Error != nil {
+		return nil, 0, countResult.Error
+	}
+
+	// Get paginated data
+	offset := (page - 1) * pageSize
+	result := r.db.Where("(name LIKE ? OR desc LIKE ?) AND deleted_at IS NULL", "%"+keyword+"%", "%"+keyword+"%").
+		Offset(offset).
+		Limit(pageSize).
+		Order("created_at DESC").
+		Find(&AppSystems)
+
+	return AppSystems, total, result.Error
+}

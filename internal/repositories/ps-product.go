@@ -14,9 +14,9 @@ type ProductRepositoryDB struct {
 }
 
 func NewProductRepositoryDB(db *gorm.DB) ports.ProductRepository {
-	if err := db.AutoMigrate(&domains.Product{}); err != nil {
-		fmt.Printf("failed to auto migrate: %v", err)
-	}
+	// if err := db.AutoMigrate(&domains.Product{}); err != nil {
+	// 	fmt.Printf("failed to auto migrate: %v", err)
+	// }
 	return &ProductRepositoryDB{db: db}
 }
 
@@ -86,7 +86,7 @@ func (r *ProductRepositoryDB) SearchProductsByName(keyword string, limit int) ([
 	var products []domains.Product
 
 	if err := r.db.Debug().
-		Where("UPPER(product_name) LIKE UPPER(?)", "%"+keyword+"%").
+		Where("product_name LIKE ?", "%"+keyword+"%").
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&products).Error; err != nil {

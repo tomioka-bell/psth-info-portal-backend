@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"backend/internal/core/models"
 )
 
 type ldapAuthRequest struct {
@@ -14,13 +16,13 @@ type ldapAuthRequest struct {
 	Password string `json:"password"`
 }
 
-func LdapAuthenticate(username, password string) (bool, string) {
+func LdapAuthenticate(username, password string) (models.LdapAuthResponse, error) {
 	baseURL := os.Getenv("AUTH_SERVICE_URL")
 	if baseURL == "" {
 		baseURL = "http://127.0.0.1:8080"
 	}
 
-	url := fmt.Sprintf("%s/api/auth/domain-login", baseURL)
+	url := fmt.Sprintf("%s/auth/ldap-authen", baseURL)
 
 	reqBody := ldapAuthRequest{
 		Username: username,
@@ -29,7 +31,10 @@ func LdapAuthenticate(username, password string) (bool, string) {
 
 	b, err := json.Marshal(reqBody)
 	if err != nil {
-		return false, "failed to marshal request to auth-service: " + err.Error()
+		return models.LdapAuthResponse{
+			Err:     true,
+			Message: "failed to marshal request to auth-service: " + err.Error(),
+		}, err
 	}
 
 	httpClient := &http.Client{
@@ -38,40 +43,38 @@ func LdapAuthenticate(username, password string) (bool, string) {
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(b))
 	if err != nil {
-		return false, "failed to create request to auth-service: " + err.Error()
+		return models.LdapAuthResponse{
+			Err:     true,
+			Message: "failed to create request to auth-service: " + err.Error(),
+		}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return false, "failed to call auth-service: " + err.Error()
+		return models.LdapAuthResponse{
+			Err:     true,
+			Message: "failed to call auth-service: " + err.Error(),
+		}, err
 	}
 	defer resp.Body.Close()
 
-	var res map[string]interface{}
-	_ = json.NewDecoder(resp.Body).Decode(&res)
-
-	msg := ""
-	if m, ok := res["error"].(string); ok {
-		msg = m
-	} else if m, ok := res["message"].(string); ok {
-		msg = m
+	var res models.LdapAuthResponse
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		return models.LdapAuthResponse{
+			Err:     true,
+			Message: "failed to decode response from auth-service: " + err.Error(),
+		}, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		if msg != "" {
-			return false, msg
+		res.Err = true
+		if res.Message == "" {
+			res.Message = fmt.Sprintf("auth-service returned status %d", resp.StatusCode)
 		}
-		return false, fmt.Sprintf("auth-service returned status %d", resp.StatusCode)
+		return res, fmt.Errorf("auth-service error: %s", res.Message)
 	}
 
-	success, _ := res["success"].(bool)
-	if !success {
-		if msg == "" {
-			msg = "authentication failed"
-		}
-		return false, msg
-	}
-
-	return true, msg
+	return res, nil
 }

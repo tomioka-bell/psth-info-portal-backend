@@ -13,26 +13,54 @@ import (
 )
 
 func (s *userService) SignInEmployee(dto models.LoginEmpResp) (string, error) {
-	user, err := clients.FindEmployeeFromMicroservice(dto.Username)
+	ldapResp, err := clients.LdapAuthenticate(dto.Username, dto.Password)
 	if err != nil {
-		return "", errors.New("username ไม่ถูกต้อง")
+		return "", err
 	}
 
-	if user == nil {
-		return "", errors.New("ไม่พบผู้ใช้")
+	if ldapResp.Err || len(ldapResp.UserInfo) == 0 {
+		return "", errors.New("authentication failed: " + ldapResp.Message)
 	}
 
-	if user.AD_AccountStatus == "DISABLE" {
+	ldapUser := ldapResp.UserInfo[0]
+
+	if ldapUser.AD_AccountStatus != "ENABLE" {
 		return "", errors.New("บัญชีนี้ถูกปิดการใช้งาน")
+	}
+
+	dbUser := models.PSEmployee{
+		UHR_EmpCode:         ldapUser.EmployeeCode,
+		UHR_FirstName_en:    ldapUser.FirstnameEn,
+		UHR_LastName_en:     ldapUser.LastnameEn,
+		UHR_FullNameTh:      ldapUser.FullnameTh,
+		UHR_FullNameEn:      ldapUser.FullnameEn,
+		UHR_FirstName_th:    ldapUser.FirstnameTh,
+		UHR_LastName_th:     ldapUser.LastnameTh,
+		UHR_Department:      ldapUser.Department,
+		UHR_Position:        ldapUser.Position,
+		AD_UserLogon:        ldapUser.AD_Username,
+		AD_Mail:             ldapUser.AD_Mail,
+		AD_AccountStatus:    ldapUser.AD_AccountStatus,
+		AD_Phone:            ldapUser.AD_Phone,
+		UHR_Phone:           ldapUser.AD_Phone,
+		UHR_OrgGroup:        ldapUser.OrgGroup,
+		UHR_OrgName:         ldapUser.OrgName,
+		UHR_GroupDepartment: ldapUser.GroupDept,
+		Role:                "user",
+	}
+
+	if err := s.userisrRepo.SaveOrUpdateEmployee(&dbUser); err != nil {
+		return "", errors.New("เกิดข้อผิดพลาดในการเก็บข้อมูล: " + err.Error())
 	}
 
 	jwtSecretKey := []byte(os.Getenv("TOKEN_SECRET_KEY"))
 	claims := jwt.MapClaims{
-		"user_id":   user.UHR_EmpCode,
-		"username":  user.AD_UserLogon,
-		"firstname": user.UHR_FirstName_en,
-		"lastname":  user.UHR_LastName_en,
-		"status":    user.AD_AccountStatus,
+		"user_id":   dbUser.UHR_EmpCode,
+		"username":  dbUser.AD_UserLogon,
+		"firstname": dbUser.UHR_FirstName_en,
+		"lastname":  dbUser.UHR_LastName_en,
+		"role":      dbUser.Role,
+		"status":    dbUser.AD_AccountStatus,
 		"iat":       time.Now().Unix(),
 		"exp":       time.Now().Add(time.Hour * 24).Unix(),
 	}
@@ -47,7 +75,7 @@ func (s *userService) SignInEmployee(dto models.LoginEmpResp) (string, error) {
 }
 
 func (s *userService) GetEmployeeByEmpCodeService(userID string) (models.EmployeeViewByEmpCodeResp, error) {
-	user, err := clients.GetEmployeeByEmpCodeFromMicroservice(userID)
+	user, err := s.userisrRepo.GetEmployeeByEmpCode(userID)
 	if err != nil {
 		return models.EmployeeViewByEmpCodeResp{}, err
 	}

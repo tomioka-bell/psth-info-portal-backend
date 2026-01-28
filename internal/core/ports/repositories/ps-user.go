@@ -1,6 +1,9 @@
 package ports
 
-import "backend/internal/core/domains"
+import (
+	"backend/internal/core/domains"
+	"backend/internal/core/models"
+)
 
 type UserRepository interface {
 	CreateUserRepository(User *domains.User) error
@@ -15,4 +18,7 @@ type UserRepository interface {
 	FindEmployeeByAccount(account string) (*domains.EmployeeView, error)
 	GetEmployeeByEmpCode(empCode string) (*domains.EmployeeView, error)
 	GetEmployees() ([]domains.EmployeeView, error)
+
+	// ====================== Employee ===================================
+	SaveOrUpdateEmployee(emp *models.PSEmployee) error
 }

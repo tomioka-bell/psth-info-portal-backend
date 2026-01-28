@@ -10,7 +10,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/spf13/viper"
 
-	"backend/internal/clients"
 	"backend/internal/core/domains"
 	"backend/internal/core/models"
 	services "backend/internal/core/ports/services"
@@ -62,22 +61,6 @@ func (h *UserHandler) LoginHandler(c *fiber.Ctx) error {
 			"error": "ข้อมูลไม่ถูกต้อง",
 		})
 	}
-
-	// 1) LDAP auth
-	ok, msg := clients.LdapAuthenticate(loginData.Username, loginData.Password)
-	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"success": false,
-			"message": msg,
-		})
-	}
-
-	// token, err := h.UserSrv.SignIn(loginData)
-	// if err != nil {
-	// 	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-	// 		"error": err.Error(),
-	// 	})
-	// }
 
 	token, err := h.UserSrv.SignInEmployee(loginData)
 	if err != nil {
@@ -188,19 +171,10 @@ func (h *UserHandler) GetProfileHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	userID := claims["user_id"].(string)
-
-	result, err := h.UserSrv.GetEmployeeByEmpCodeService(userID)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status": "error",
-			"error":  err.Error(),
-		})
-	}
-
+	// ส่งคืน claims จาก JWT โดยตรง
 	return c.JSON(fiber.Map{
 		"status": "success",
-		"result": result,
+		"result": claims,
 	})
 }
 
