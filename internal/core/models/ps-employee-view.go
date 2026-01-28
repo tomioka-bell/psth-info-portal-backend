@@ -1,23 +1,22 @@
 package models
 
 type EmployeeViewResp struct {
-	UHR_EmpCode         string `gorm:"column:UHR_EmpCode"`
-	UHR_FullNameTh      string `gorm:"column:UHR_FullName_th"`
-	UHR_FullNameEn      string `gorm:"column:UHR_FullName_en"`
-	UHR_FirstName_en    string `gorm:"column:UHR_FirstName_en"`
-	UHR_LastName_en     string `gorm:"column:UHR_LastName_en"`
-	UHR_Department      string `gorm:"column:UHR_Department"`
-	UHR_Position        string `gorm:"column:UHR_Position"`
-	UHR_GroupDepartment string `gorm:"column:UHR_GroupDepartment"`
-	UHR_StatusToUse     string `gorm:"column:UHR_StatusToUse"`
-	AD_UserLogon        string `gorm:"column:AD_UserLogon"`
-	AD_Mail             string `gorm:"column:AD_Mail"`
-	AD_Phone            string `gorm:"column:AD_Phone"`
-	AD_AccountStatus    string `gorm:"column:AD_AccountStatus"`
-	UHR_OrgGroup        string `gorm:"column:UHR_OrgGroup"`
-	UHR_OrgName         string `gorm:"column:UHR_OrgName"`
+	UHR_EmpCode         string `json:"employee_code"`
+	UHR_FullNameTh      string `json:"fullname_th"`
+	UHR_FullNameEn      string `json:"fullname_en"`
+	UHR_FirstName_en    string `json:"firstname_en"`
+	UHR_LastName_en     string `json:"lastname_en"`
+	UHR_Department      string `json:"department"`
+	UHR_Position        string `json:"position"`
+	UHR_GroupDepartment string `json:"group_department"`
+	UHR_StatusToUse     string `json:"status_to_use"`
+	AD_UserLogon        string `json:"user_logon"`
+	AD_Mail             string `json:"mail"`
+	AD_AccountStatus    string `json:"account_status"`
+	UHR_OrgGroup        string `json:"org_group"`
+	UHR_OrgName         string `json:"org_name"`
 	ImageURL            string `json:"image_url"`
-	UHR_Phone           string `gorm:"column:UHR_Phone"`
+	UHR_Phone           string `json:"phone"`
 }
 
 type EmployeeViewByEmpCodeResp struct {

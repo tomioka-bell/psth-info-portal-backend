@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"database/sql"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -43,12 +44,17 @@ func (r *UserRepositoryDB) FindEmployeeByAccount(account string) (*domains.Emplo
 
 func (r *UserRepositoryDB) GetEmployees() ([]domains.EmployeeView, error) {
 	var employees []domains.EmployeeView
-	const limit int = 5000
 
-	if err := r.db.
-		Where("UHR_StatusToUse <> ?", "DISABLE").
-		Limit(limit).
-		Find(&employees).Error; err != nil {
+	query := `
+		SELECT *
+		FROM PSTH_HR_SERVICE.dbo.V_HRS_UsersHrService
+		WHERE UHR_StatusToUse = @status
+	`
+
+	if err := r.db.Raw(
+		query,
+		sql.Named("status", "ENABLE"),
+	).Scan(&employees).Error; err != nil {
 		return nil, err
 	}
 
