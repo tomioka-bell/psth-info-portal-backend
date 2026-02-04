@@ -36,6 +36,8 @@ func (s *CustomerManualService) CreateCustomerManual(req *models.CreateCustomerM
 		Desc:               strings.TrimSpace(req.Desc),
 		Category:           strings.ToLower(req.Category),
 		FileName:           strings.TrimSpace(req.FileName),
+		ParentID:           req.ParentID,
+		SortOrder:          req.SortOrder,
 	}
 
 	err := s.repo.CreateCustomerManual(manual)
@@ -101,12 +103,30 @@ func (s *CustomerManualService) GetAllCustomerManuals(page, pageSize int) (*mode
 			Desc:               manual.Desc,
 			Category:           manual.Category,
 			FileName:           manual.FileName,
+			ParentID:           manual.ParentID,
+			SortOrder:          manual.SortOrder,
 			CreatedAt:          manual.CreatedAt,
 			UpdatedAt:          manual.UpdatedAt,
 		}
 	}
 
 	return resp, nil
+}
+
+// GetAllCustomerManualsTree retrieves all customer manuals as a hierarchical tree structure
+func (s *CustomerManualService) GetAllCustomerManualsTree() ([]domains.CustomerManualMenu, error) {
+	// Get all customer manuals without pagination
+	page := 1
+	pageSize := 10000 // Get all records
+
+	manuals, _, err := s.repo.GetAllCustomerManuals(page, pageSize)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build tree structure
+	tree := domains.BuildCustomerManualTree(manuals)
+	return tree, nil
 }
 
 // GetCustomerManualsByCategory retrieves customer manuals by category
@@ -173,6 +193,13 @@ func (s *CustomerManualService) UpdateCustomerManual(id int, req *models.UpdateC
 	if req.FileName != "" {
 		updates["file_name"] = strings.TrimSpace(req.FileName)
 	}
+
+	if req.ClearParentID {
+		updates["parent_id"] = nil
+	} else if req.ParentID != nil {
+		updates["parent_id"] = *req.ParentID
+	}
+	updates["sort_order"] = req.SortOrder
 
 	updates["updated_at"] = time.Now()
 
@@ -244,6 +271,11 @@ func (s *CustomerManualService) SearchCustomerManuals(keyword string, page, page
 func (s *CustomerManualService) CreateCustomerManualService(req models.CreateCustomerManualRequest) error {
 	_, err := s.CreateCustomerManual(&req)
 	return err
+}
+
+// CreateCustomerManualWithResponse creates and returns the response with ID
+func (s *CustomerManualService) CreateCustomerManualWithResponse(req models.CreateCustomerManualRequest) (*models.CustomerManualResponse, error) {
+	return s.CreateCustomerManual(&req)
 }
 
 // GetAllCustomerManualService implements the port interface

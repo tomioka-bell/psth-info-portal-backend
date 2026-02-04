@@ -13,8 +13,7 @@ type OrganizationDocRepository struct {
 }
 
 func NewOrganizationDocRepository(db *gorm.DB) *OrganizationDocRepository {
-	// Auto-migrate
-	db.AutoMigrate(&domains.OrganizationDoc{})
+	// db.AutoMigrate(&domains.OrganizationDoc{})
 	return &OrganizationDocRepository{db: db}
 }
 

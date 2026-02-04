@@ -31,5 +31,8 @@ func RoutesUser(db *gorm.DB) *fiber.App {
 	app.Get("/get-user-count", UserHandler.GetUserCountHandler)
 
 	app.Get("/get-all-employees", UserHandler.GetAllEmployeesHandler)
+
+	app.Get("/get-all-employees-admin", UserHandler.GetEmployeesAdminHandler)
+	app.Patch("/update-employee-by-empcode", UserHandler.UpdateEmployeeWithMapServiceHandler)
 	return app
 }

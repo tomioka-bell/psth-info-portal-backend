@@ -17,4 +17,6 @@ type UserService interface {
 	SignInEmployee(dto models.LoginEmpResp) (string, error)
 	GetEmployeeByEmpCodeService(userID string) (models.EmployeeViewByEmpCodeResp, error)
 	GetAllEmployeesService() ([]models.EmployeeViewResp, error)
+	GetEmployeesAdminService() ([]models.EmployeeAdminResp, error)
+	UpdateEmployeeWithMapService(empCode string, updates map[string]interface{}) error
 }

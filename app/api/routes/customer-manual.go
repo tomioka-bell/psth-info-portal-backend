@@ -21,7 +21,9 @@ func RoutesCustomerManual(db *gorm.DB) *fiber.App {
 	CustomerManualHandler := handlers.NewCustomerManualHandler(CustomerManualService)
 
 	app.Post("/create", CustomerManualHandler.CreateCustomerManualHandler)
+	app.Post("/create-nested", CustomerManualHandler.CreateCustomerManualNestedHandler)
 	app.Get("/list", CustomerManualHandler.GetAllCustomerManualHandler)
+	app.Get("/tree", CustomerManualHandler.GetCustomerManualTreeHandler)
 	app.Put("/update/:customer_manual_id", CustomerManualHandler.UpdateCustomerManualHandler)
 	app.Delete("/delete/:customer_manual_id", CustomerManualHandler.DeleteCustomerManualHandler)
 

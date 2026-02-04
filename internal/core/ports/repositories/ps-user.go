@@ -16,9 +16,11 @@ type UserRepository interface {
 
 	// ====================== Employee View ===================================
 	FindEmployeeByAccount(account string) (*domains.EmployeeView, error)
-	GetEmployeeByEmpCode(empCode string) (*domains.EmployeeView, error)
+	GetEmployeeByEmpCode(empCode string) (*domains.PSEmployee, error)
 	GetEmployees() ([]domains.EmployeeView, error)
+	GetEmployeesAdmin() ([]domains.PSEmployee, error)
 
 	// ====================== Employee ===================================
 	SaveOrUpdateEmployee(emp *models.PSEmployee) error
+	UpdateEmployeeWithMap(empCode string, updates map[string]interface{}) error
 }

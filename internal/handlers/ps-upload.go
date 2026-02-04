@@ -21,11 +21,9 @@ func ServeUploadFile(c *fiber.Ctx) error {
 
 	log.Printf("[ServeUploadFile] Attempting to serve file: %s\n", filePath)
 
-	// Check if file exists
 	fileInfo, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		log.Printf("[ServeUploadFile] File not found: %s\n", filePath)
-		// List available files for debugging
 		dirPath := filepath.Join("uploads", folder)
 		files, _ := os.ReadDir(dirPath)
 		log.Printf("[ServeUploadFile] Files in %s:\n", dirPath)

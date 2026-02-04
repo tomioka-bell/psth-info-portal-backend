@@ -21,6 +21,87 @@ func NewCustomerManualHandler(insSrv services.CustomerManualService) *CustomerMa
 	return &CustomerManualHandler{CustomerManualSrv: insSrv}
 }
 
+func (h *CustomerManualHandler) CreateCustomerManualNestedHandler(c *fiber.Ctx) error {
+	var nestedReq []models.CreateCustomerManualRequest
+
+	if err := c.BodyParser(&nestedReq); err != nil {
+		var singleReq models.CreateCustomerManualRequest
+		if err := c.BodyParser(&singleReq); err != nil {
+			return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid request body",
+			})
+		}
+		nestedReq = []models.CreateCustomerManualRequest{singleReq}
+	}
+
+	if len(nestedReq) == 0 {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": "Request body is empty",
+		})
+	}
+
+	type CreatedManual struct {
+		ID               int             `json:"id"`
+		CustomerManualID int             `json:"customer_manual_id"`
+		Name             string          `json:"name"`
+		Children         []CreatedManual `json:"children,omitempty"`
+	}
+
+	var createdItems []CreatedManual
+
+	// Recursive function สร้าง CustomerManual + children
+	var createRecursive func(req models.CreateCustomerManualRequest, parentID *int) (*CreatedManual, error)
+	createRecursive = func(req models.CreateCustomerManualRequest, parentID *int) (*CreatedManual, error) {
+		createReq := models.CreateCustomerManualRequest{
+			CustomerManualName: req.CustomerManualName,
+			Desc:               req.Desc,
+			Category:           req.Category,
+			FileName:           req.FileName,
+			ParentID:           parentID,
+			SortOrder:          req.SortOrder,
+		}
+
+		// สร้าง parent item
+		resp, err := h.CustomerManualSrv.CreateCustomerManualWithResponse(createReq)
+		if err != nil {
+			return nil, err
+		}
+
+		created := &CreatedManual{
+			ID:               resp.CustomerManualID,
+			CustomerManualID: resp.CustomerManualID,
+			Name:             resp.CustomerManualName,
+		}
+
+		// สร้าง children recursively ด้วย parent ID ที่เพิ่งสร้าง
+		for _, child := range req.Children {
+			childCreated, err := createRecursive(child, &resp.CustomerManualID)
+			if err != nil {
+				return nil, err
+			}
+			created.Children = append(created.Children, *childCreated)
+		}
+
+		return created, nil
+	}
+
+	// สร้างทั้งหมด
+	for _, item := range nestedReq {
+		created, err := createRecursive(item, nil)
+		if err != nil {
+			return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+		createdItems = append(createdItems, *created)
+	}
+
+	return c.Status(http.StatusCreated).JSON(fiber.Map{
+		"message": "Customer manuals created successfully",
+		"data":    createdItems,
+	})
+}
+
 // Create customer manual with single file upload
 func (h *CustomerManualHandler) CreateCustomerManualHandler(c *fiber.Ctx) error {
 	relPath, _, err := uploader.UploadFromForm(c, "file", uploader.Options{
@@ -67,6 +148,18 @@ func (h *CustomerManualHandler) GetAllCustomerManualHandler(c *fiber.Ctx) error 
 	return c.Status(http.StatusOK).JSON(manuals)
 }
 
+// Get customer manuals as tree structure
+func (h *CustomerManualHandler) GetCustomerManualTreeHandler(c *fiber.Ctx) error {
+	tree, err := h.CustomerManualSrv.GetAllCustomerManualsTree()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to fetch customer manuals tree",
+		})
+	}
+
+	return c.Status(http.StatusOK).JSON(tree)
+}
+
 // Update customer manual
 func (h *CustomerManualHandler) UpdateCustomerManualHandler(c *fiber.Ctx) error {
 	customerManualIDStr := c.Params("customer_manual_id")
@@ -97,10 +190,31 @@ func (h *CustomerManualHandler) UpdateCustomerManualHandler(c *fiber.Ctx) error 
 		log.Printf("[UpdateCustomerManualHandler] File uploaded successfully: %s\n", relPath)
 	}
 
+	sortOrder := 0
+	if sortOrderStr := c.FormValue("sort_order"); sortOrderStr != "" {
+		if so, err := strconv.Atoi(sortOrderStr); err == nil {
+			sortOrder = so
+		}
+	}
+
+	var parentID *int
+	clearParentID := false
+	if parentIDStr := c.FormValue("parent_id"); parentIDStr != "" {
+		if pid, err := strconv.Atoi(parentIDStr); err == nil {
+			parentID = &pid
+		}
+	} else if parentIDStr == "" && c.FormValue("parent_id") == "" {
+		// Empty string means user wants to clear parent_id (set to NULL)
+		clearParentID = true
+	}
+
 	req := models.UpdateCustomerManualRequest{
 		CustomerManualName: c.FormValue("customer_manual_name"),
 		Desc:               c.FormValue("desc"),
 		Category:           c.FormValue("category"),
+		SortOrder:          sortOrder,
+		ParentID:           parentID,
+		ClearParentID:      clearParentID,
 	}
 
 	// Only set FileName if a new file was uploaded

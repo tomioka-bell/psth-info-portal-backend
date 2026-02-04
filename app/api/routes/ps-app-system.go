@@ -23,10 +23,11 @@ func RoutesAppSystem(db *gorm.DB) *fiber.App {
 	// CRUD routes
 	app.Post("/create", AppSystemHandler.CreateAppSystemHandler)
 	app.Get("/list", AppSystemHandler.GetAllAppSystemsHandler)
+	app.Get("/tree", AppSystemHandler.GetAppSystemsTreeHandler)
 	app.Get("/category/:category", AppSystemHandler.GetAppSystemsByCategoryHandler)
 	app.Get("/search", AppSystemHandler.SearchAppSystemsHandler)
 	app.Get("/:id", AppSystemHandler.GetAppSystemHandler)
-	app.Put("/:id", AppSystemHandler.UpdateAppSystemHandler)
+	app.Put("/update/:id", AppSystemHandler.UpdateAppSystemHandler)
 	app.Delete("/:id", AppSystemHandler.DeleteAppSystemHandler)
 
 	app.Post("/create-multiple", AppSystemHandler.CreateAppSystemsHandler)

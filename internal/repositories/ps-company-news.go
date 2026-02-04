@@ -16,9 +16,9 @@ type CompanyNewsRepositoryDB struct {
 }
 
 func NewCompanyNewsRepositoryDB(db *gorm.DB) ports.CompanyNewsRepository {
-	if err := db.AutoMigrate(&domains.CompanyNews{}); err != nil {
-		fmt.Printf("failed to auto migrate: %v", err)
-	}
+	// if err := db.AutoMigrate(&domains.CompanyNews{}); err != nil {
+	// 	fmt.Printf("failed to auto migrate: %v", err)
+	// }
 	return &CompanyNewsRepositoryDB{db: db}
 }
 
@@ -76,18 +76,53 @@ func (r *CompanyNewsRepositoryDB) CreateCompanyNews(n *domains.CompanyNews) erro
 
 func (r *CompanyNewsRepositoryDB) GetCompanyNewsByID(companyNewsID string) (domains.CompanyNews, error) {
 	const q = `
-		SELECT company_news_id, company_news_photo, title, content, category,
-		       username_creator, created_at, updated_at
+		SELECT TOP 1
+			CONVERT(NVARCHAR(36), company_news_id) AS company_news_id,
+			company_news_photo,
+			title,
+			content,
+			category,
+			username_creator,
+			created_at,
+			updated_at
 		FROM company_news
-		WHERE company_news_id = $1
-		LIMIT 1;
+		WHERE CONVERT(NVARCHAR(36), company_news_id) = ?
+		ORDER BY created_at DESC;
 	`
 
-	var row domains.CompanyNews
+	type companyNewsRow struct {
+		CompanyNewsID    string    `gorm:"column:company_news_id"`
+		CompanyNewsPhoto string    `gorm:"column:company_news_photo"`
+		Title            string    `gorm:"column:title"`
+		Content          string    `gorm:"column:content"`
+		Category         string    `gorm:"column:category"`
+		UsernameCreator  string    `gorm:"column:username_creator"`
+		CreatedAt        time.Time `gorm:"column:created_at"`
+		UpdatedAt        time.Time `gorm:"column:updated_at"`
+	}
+
+	var row companyNewsRow
 	if err := r.db.Raw(q, companyNewsID).Scan(&row).Error; err != nil {
+		fmt.Printf("GetCompanyNewsByID error: %v\n", err)
 		return domains.CompanyNews{}, err
 	}
-	return row, nil
+
+	id, err := uuid.Parse(row.CompanyNewsID)
+	if err != nil {
+		fmt.Printf("GetCompanyNewsByID parse UUID error: %v\n", err)
+		return domains.CompanyNews{}, err
+	}
+
+	return domains.CompanyNews{
+		CompanyNewsID:    id,
+		CompanyNewsPhoto: row.CompanyNewsPhoto,
+		Title:            row.Title,
+		Content:          row.Content,
+		Category:         row.Category,
+		UsernameCreator:  row.UsernameCreator,
+		CreatedAt:        row.CreatedAt,
+		UpdatedAt:        row.UpdatedAt,
+	}, nil
 }
 
 func (r *CompanyNewsRepositoryDB) GetAllCompanyNews() ([]domains.CompanyNews, error) {
@@ -140,7 +175,7 @@ func (r *CompanyNewsRepositoryDB) GetAllCompanyNews() ([]domains.CompanyNews, er
 func (r *CompanyNewsRepositoryDB) GetCompanyNews(limit, offset int) ([]domains.CompanyNews, int64, error) {
 	var total int64
 
-	const countQ = `SELECT COUNT(*) FROM company_news;`
+	const countQ = `SELECT COUNT(*) FROM company_news WHERE deleted_at IS NULL;`
 	if err := r.db.Raw(countQ).Scan(&total).Error; err != nil {
 		fmt.Printf("GetCompanyNews count error: %v\n", err)
 		return nil, 0, err
@@ -154,14 +189,15 @@ func (r *CompanyNewsRepositoryDB) GetCompanyNews(limit, offset int) ([]domains.C
 	}
 
 	const q = `
-        SELECT CONVERT(NVARCHAR(36), company_news_id) AS company_news_id, 
-               company_news_photo, title, content, category,
-               username_creator, created_at, updated_at
-        FROM company_news
-        ORDER BY created_at DESC
-        OFFSET ? ROWS
-        FETCH NEXT ? ROWS ONLY;
-    `
+    SELECT CONVERT(NVARCHAR(36), company_news_id) AS company_news_id, 
+           company_news_photo, title, content, category,
+           username_creator, created_at, updated_at
+    FROM company_news
+    WHERE deleted_at IS NULL
+    ORDER BY created_at DESC
+    OFFSET ? ROWS
+    FETCH NEXT ? ROWS ONLY;
+`
 
 	type companyNewsRow struct {
 		CompanyNewsID    string    `gorm:"column:company_news_id"`

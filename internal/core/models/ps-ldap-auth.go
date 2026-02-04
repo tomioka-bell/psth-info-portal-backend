@@ -51,4 +51,5 @@ type PSEmployee struct {
 	AD_Phone            string `json:"AD_Phone"`
 	AD_AccountStatus    string `json:"AD_AccountStatus"`
 	Role                string `json:"Role"`
+	StatusLogin         string `json:"StatusLogin"`
 }

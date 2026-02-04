@@ -239,3 +239,7 @@ func (s *userService) GetUserCountService() (int64, error) {
 	}
 	return count, nil
 }
+
+func (s *userService) UpdateEmployeeWithMapService(empCode string, updates map[string]interface{}) error {
+	return s.userisrRepo.UpdateEmployeeWithMap(empCode, updates)
+}

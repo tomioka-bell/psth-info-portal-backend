@@ -87,7 +87,7 @@ func (h *UserHandler) LogoutDBHandler(c *fiber.Ctx) error {
 	})
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"Logout": "ออกจากระบบสำเร็จ",
+		"Logout": "Logout successfully",
 	})
 }
 
@@ -240,6 +240,41 @@ func (h *UserHandler) GetAllEmployeesHandler(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(employees)
+}
+
+func (h *UserHandler) GetEmployeesAdminHandler(c *fiber.Ctx) error {
+	employees, err := h.UserSrv.GetEmployeesAdminService()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to retrieve employees",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(employees)
+}
+
+func (h *UserHandler) UpdateEmployeeWithMapServiceHandler(c *fiber.Ctx) error {
+	empCode := c.Query("emp_code")
+
+	var updatedEmployee domains.PSEmployee
+	if err := c.BodyParser(&updatedEmployee); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request payload"})
+	}
+
+	updates := map[string]interface{}{}
+
+	if updatedEmployee.Role != "" {
+		updates["role"] = updatedEmployee.Role
+	}
+	if updatedEmployee.StatusLogin != "" {
+		updates["status_login"] = updatedEmployee.StatusLogin
+	}
+
+	err := h.UserSrv.UpdateEmployeeWithMapService(empCode, updates)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(http.StatusOK).JSON(fiber.Map{"message": "Employee updated successfully"})
 }
 
 func (h *UserHandler) CheckAuth(c *fiber.Ctx) error {

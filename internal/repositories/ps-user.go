@@ -103,3 +103,10 @@ func (r UserRepositoryDB) SaveOrUpdateEmployee(emp *models.PSEmployee) error {
 
 	return r.db.Model(&existing).Updates(domainEmp).Error
 }
+
+func (r UserRepositoryDB) UpdateEmployeeWithMap(empCode string, updates map[string]interface{}) error {
+	return r.db.Debug().Model(&domains.PSEmployee{}).
+		Where("UHR_EmpCode = ?", empCode).
+		Updates(updates).
+		Error
+}

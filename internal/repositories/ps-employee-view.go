@@ -19,8 +19,8 @@ func (r *UserRepositoryDB) GetEmployeeByFullNameEn(fullNameEn string) (*domains.
 	return &emp, nil
 }
 
-func (r *UserRepositoryDB) GetEmployeeByEmpCode(empCode string) (*domains.EmployeeView, error) {
-	var emp domains.EmployeeView
+func (r *UserRepositoryDB) GetEmployeeByEmpCode(empCode string) (*domains.PSEmployee, error) {
+	var emp domains.PSEmployee
 	if err := r.db.
 		Where("UHR_EmpCode = ?", empCode).
 		First(&emp).Error; err != nil {
@@ -54,6 +54,23 @@ func (r *UserRepositoryDB) GetEmployees() ([]domains.EmployeeView, error) {
 	if err := r.db.Raw(
 		query,
 		sql.Named("status", "ENABLE"),
+	).Scan(&employees).Error; err != nil {
+		return nil, err
+	}
+
+	return employees, nil
+}
+
+func (r *UserRepositoryDB) GetEmployeesAdmin() ([]domains.PSEmployee, error) {
+	var employees []domains.PSEmployee
+
+	query := `
+		SELECT *
+		FROM ps_employees
+	`
+
+	if err := r.db.Raw(
+		query,
 	).Scan(&employees).Error; err != nil {
 		return nil, err
 	}

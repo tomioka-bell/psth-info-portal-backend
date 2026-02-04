@@ -7,17 +7,19 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type CompanyNews struct {
-	CompanyNewsID    uuid.UUID `gorm:"type:uniqueidentifier;primaryKey;default:NEWID()" json:"company_news_id"`
-	CompanyNewsPhoto string    `json:"company_news_photo"`
-	Title            string    `json:"title"`
-	Content          string    `json:"content"`
-	Category         string    `json:"category"`
-	UsernameCreator  string    `json:"username_creator"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	CompanyNewsID    uuid.UUID      `gorm:"type:uniqueidentifier;primaryKey;default:NEWID()" json:"company_news_id"`
+	CompanyNewsPhoto string         `json:"company_news_photo"`
+	Title            string         `json:"title"`
+	Content          string         `json:"content"`
+	Category         string         `json:"category"`
+	UsernameCreator  string         `json:"username_creator"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	DeletedAt        gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 // Scan implements the Scanner interface for database/sql
@@ -74,6 +76,11 @@ func (cn *CompanyNews) Scan(src interface{}) error {
 		return fmt.Errorf("unsupported type: %T", src)
 	}
 	return nil
+}
+
+// TableName specifies the table name for the CompanyNews model
+func (CompanyNews) TableName() string {
+	return "company_news"
 }
 
 // Value implements the Valuer interface for database/sql

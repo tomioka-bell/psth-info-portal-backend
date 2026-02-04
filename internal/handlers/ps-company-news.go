@@ -63,11 +63,62 @@ func (h *CompanyNewsHandler) CreateCompanyNewsFormHandler(c *fiber.Ctx) error {
 	})
 }
 
+func (h *CompanyNewsHandler) UploadImageHandler(c *fiber.Ctx) error {
+	log.Println("[UploadImageHandler] Starting image upload...")
+
+	relPath, publicURL, err := uploader.UploadFromForm(c, "image", uploader.Options{
+		Dir:          "./uploads/company_news",
+		AllowedMIMEs: []string{"image/jpeg", "image/png", "image/webp"},
+		MaxSize:      10 << 20,
+		BaseURL:      "",
+		Required:     true,
+	})
+	if err != nil {
+		log.Printf("[UploadImageHandler] Upload error: %v\n", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if publicURL == "" {
+		publicURL = "/" + relPath
+	}
+
+	log.Printf("[UploadImageHandler] Upload successful - Path: %s, URL: %s\n", relPath, publicURL)
+	return c.JSON(fiber.Map{
+		"result": fiber.Map{
+			"url":  publicURL,
+			"path": relPath,
+		},
+	})
+}
+
 func (h *CompanyNewsHandler) GetCompanyNewsByTitleHandler(c *fiber.Ctx) error {
 	title := c.Query("title")
 
 	job, err := h.CompanyNewsSrv.GetCompanyNewsByTitle(title)
 	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve company news",
+		})
+	}
+
+	return c.JSON(job)
+}
+
+func (h *CompanyNewsHandler) GetCompanyNewsByIDHandler(c *fiber.Ctx) error {
+	companyNewsID := c.Params("id")
+	log.Printf("[GetCompanyNewsByIDHandler] Fetching news with ID: %s\n", companyNewsID)
+
+	if companyNewsID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Company news ID is required",
+		})
+	}
+
+	job, err := h.CompanyNewsSrv.GetCompanyNewsByID(companyNewsID)
+	if err != nil {
+		log.Printf("[GetCompanyNewsByIDHandler] Error: %v\n", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve company news",
 		})

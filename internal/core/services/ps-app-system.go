@@ -31,11 +31,13 @@ func (s *AppSystemService) CreateAppSystem(req *models.CreateAppSystemRequest) (
 	}
 
 	org := &domains.AppSystem{
-		Name:     strings.TrimSpace(req.Name),
-		Desc:     strings.TrimSpace(req.Desc),
-		Category: strings.ToLower(req.Category),
-		Href:     strings.TrimSpace(req.Href),
-		Icon:     strings.TrimSpace(req.Icon),
+		Name:      strings.TrimSpace(req.Name),
+		Desc:      strings.TrimSpace(req.Desc),
+		Category:  strings.ToLower(req.Category),
+		Href:      strings.TrimSpace(req.Href),
+		Icon:      strings.TrimSpace(req.Icon),
+		ParentID:  req.ParentID,
+		SortOrder: req.SortOrder,
 	}
 
 	err := s.repo.CreateAppSystem(org)
@@ -97,6 +99,12 @@ func (s *AppSystemService) GetAllAppSystems(page, pageSize int) (*models.AppSyst
 	}
 
 	for i, org := range orgs {
+		var parentID int
+		if org.ParentID != nil {
+			parentID = *org.ParentID
+		} else {
+			parentID = 0 // root
+		}
 		resp.Data[i] = models.AppSystemResponse{
 			ID:        org.ID,
 			Name:      org.Name,
@@ -104,12 +112,30 @@ func (s *AppSystemService) GetAllAppSystems(page, pageSize int) (*models.AppSyst
 			Category:  org.Category,
 			Href:      org.Href,
 			Icon:      org.Icon,
+			ParentID:  parentID,
+			SortOrder: org.SortOrder,
 			CreatedAt: org.CreatedAt,
 			UpdatedAt: org.UpdatedAt,
 		}
 	}
 
 	return resp, nil
+}
+
+// GetAllAppSystemsTree retrieves all AppSystems as a hierarchical tree structure
+func (s *AppSystemService) GetAllAppSystemsTree() ([]domains.AppSystemMenu, error) {
+	// Get all AppSystems without pagination
+	page := 1
+	pageSize := 10000 // Get all records
+
+	orgs, _, err := s.repo.GetAllAppSystems(page, pageSize)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build tree structure
+	tree := domains.BuildAppSystemTree(orgs)
+	return tree, nil
 }
 
 // GetAppSystemsByCategory retrieves AppSystems by category
@@ -184,6 +210,15 @@ func (s *AppSystemService) UpdateAppSystem(id int, req *models.UpdateAppSystemRe
 	if req.Icon != "" {
 		updates["icon"] = strings.TrimSpace(req.Icon)
 	}
+
+	// Add parent_id and sort_order updates
+	// If ClearParentID is true, set parent_id to NULL; otherwise update if ParentID is not nil
+	if req.ClearParentID {
+		updates["parent_id"] = nil
+	} else if req.ParentID != nil {
+		updates["parent_id"] = *req.ParentID
+	}
+	updates["sort_order"] = req.SortOrder
 
 	updates["updated_at"] = time.Now()
 
@@ -268,6 +303,11 @@ func (s *AppSystemService) SearchAppSystems(keyword string, page, pageSize int) 
 func (s *AppSystemService) CreateAppSystemService(req models.CreateAppSystemRequest) error {
 	_, err := s.CreateAppSystem(&req)
 	return err
+}
+
+// CreateAppSystemWithResponse creates and returns the response with ID
+func (s *AppSystemService) CreateAppSystemWithResponse(req models.CreateAppSystemRequest) (*models.AppSystemResponse, error) {
+	return s.CreateAppSystem(&req)
 }
 
 // GetAllAppSystemsService implements the port interface

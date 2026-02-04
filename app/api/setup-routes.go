@@ -15,7 +15,6 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 
 	api := app.Group("/api", logger.New())
 	api.Mount("/user", routes.RoutesUser(db))
-	api.Mount("/product", routes.RoutesProduct(db))
 	api.Mount("/company-news", routes.RoutesCompanyNews(db))
 	api.Mount("/file", routes.RoutesFile())
 	api.Mount("/organization", routes.RoutesOrganization(db))
@@ -23,5 +22,9 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 	api.Mount("/procedure-manual", routes.RoutesProcedureManual(db))
 	api.Mount("/customer-manual", routes.RoutesCustomerManual(db))
 	api.Mount("/organization-docs", routes.RoutesOrganizationDoc(db))
+	api.Mount("/safety-documents", routes.RoutesSafetyDocument(db))
+	api.Mount("/welfare-benefits", routes.RoutesWelfareBenefit(db))
+	api.Mount("/dashboard", routes.RoutesDashboard(db))
 	api.Mount("/questionnaire", routes.RoutesQuestionnaire(db))
+	api.Mount("/calendar-event", routes.RoutesCompanyCalendarEvent(db))
 }

@@ -14,9 +14,9 @@ type QuestionnaireRepositoryDB struct {
 }
 
 func NewQuestionnaireRepositoryDB(db *gorm.DB) ports.QuestionnaireRepository {
-	if err := db.AutoMigrate(&domains.Questionnaire{}); err != nil {
-		fmt.Printf("failed to auto migrate: %v", err)
-	}
+	// if err := db.AutoMigrate(&domains.Questionnaire{}); err != nil {
+	// 	fmt.Printf("failed to auto migrate: %v", err)
+	// }
 	return &QuestionnaireRepositoryDB{db: db}
 }
 

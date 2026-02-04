@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"errors"
-	"fmt"
 
 	"gorm.io/gorm"
 
@@ -14,9 +13,9 @@ type OrganizationRepository struct {
 }
 
 func NewOrganizationRepository(db *gorm.DB) *OrganizationRepository {
-	if err := db.AutoMigrate(&domains.Organization{}); err != nil {
-		fmt.Printf("failed to auto migrate: %v", err)
-	}
+	// if err := db.AutoMigrate(&domains.Organization{}); err != nil {
+	// 	fmt.Printf("failed to auto migrate: %v", err)
+	// }
 	return &OrganizationRepository{db: db}
 }
 

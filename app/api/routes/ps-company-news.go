@@ -21,8 +21,10 @@ func RoutesCompanyNews(db *gorm.DB) *fiber.App {
 	CompanyNewsHandler := handlers.NewCompanyNewsHandler(CompanyNewsService)
 
 	app.Post("/create-company-news", CompanyNewsHandler.CreateCompanyNewsFormHandler)
+	app.Post("/upload-image", CompanyNewsHandler.UploadImageHandler)
 	app.Get("/get-company-news", CompanyNewsHandler.GetCompanyNewsHandler)
 	app.Get("/get-company-news-by-title", CompanyNewsHandler.GetCompanyNewsByTitleHandler)
+	app.Get("/get-company-news/:id", CompanyNewsHandler.GetCompanyNewsByIDHandler)
 	app.Put("/update-company-news/:company_news_id", CompanyNewsHandler.UpdateCompanyNewsFormHandler)
 	app.Delete("/delete-company-news/:company_news_id", CompanyNewsHandler.DeleteCompanyNewsHandler)
 	return app

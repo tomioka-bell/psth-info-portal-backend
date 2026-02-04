@@ -19,6 +19,7 @@ type PSEmployee struct {
 	AD_Phone            string `gorm:"column:AD_Phone"`
 	AD_AccountStatus    string `gorm:"column:AD_AccountStatus"`
 	Role                string `gorm:"column:role;default:user"`
+	StatusLogin         string `gorm:"column:status_login;default:ENABLE"`
 }
 
 func (PSEmployee) TableName() string {

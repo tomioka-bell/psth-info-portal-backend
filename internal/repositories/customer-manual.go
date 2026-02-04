@@ -49,7 +49,7 @@ func (r *CustomerManualRepository) GetAllCustomerManuals(page, pageSize int) ([]
 	}
 
 	offset := (page - 1) * pageSize
-	if err := r.db.Where("deleted_at IS NULL").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&manuals).Error; err != nil {
+	if err := r.db.Where("deleted_at IS NULL").Order("sort_order ASC, created_at DESC").Offset(offset).Limit(pageSize).Find(&manuals).Error; err != nil {
 		return nil, 0, err
 	}
 

@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"errors"
-	"fmt"
 
 	"gorm.io/gorm"
 
@@ -14,15 +13,16 @@ type AppSystemRepository struct {
 }
 
 func NewAppSystemRepository(db *gorm.DB) *AppSystemRepository {
-	if err := db.AutoMigrate(&domains.AppSystem{}); err != nil {
-		fmt.Printf("failed to auto migrate: %v", err)
-	}
+	// AutoMigrate ได้แค่ AppSystem เท่านั้น (AppSystemMenu เป็น DTO ไม่ต้องใน DB)
+	// if err := db.AutoMigrate(&domains.AppSystem{}); err != nil {
+	// 	fmt.Printf("failed to auto migrate AppSystem: %v\n", err)
+	// }
 	return &AppSystemRepository{db: db}
 }
 
 // CreateAppSystem creates a new AppSystem
 func (r *AppSystemRepository) CreateAppSystem(org *domains.AppSystem) error {
-	result := r.db.Create(org)
+	result := r.db.Debug().Create(org)
 	return result.Error
 }
 
@@ -138,4 +138,22 @@ func (r *AppSystemRepository) SearchAppSystems(keyword string, page, pageSize in
 		Find(&AppSystems)
 
 	return AppSystems, total, result.Error
+}
+
+// GetAllAppSystemsForTree retrieves all AppSystems (ไม่ pagination) เพื่อสร้าง tree structure
+func (r *AppSystemRepository) GetAllAppSystemsForTree() ([]domains.AppSystem, error) {
+	var systems []domains.AppSystem
+	result := r.db.Where("deleted_at IS NULL").
+		Order("sort_order ASC, created_at ASC").
+		Find(&systems)
+	return systems, result.Error
+}
+
+// GetAppSystemTree retrieves AppSystems as hierarchical tree structure
+func (r *AppSystemRepository) GetAppSystemTree() ([]domains.AppSystemMenu, error) {
+	systems, err := r.GetAllAppSystemsForTree()
+	if err != nil {
+		return nil, err
+	}
+	return domains.BuildAppSystemTree(systems), nil
 }

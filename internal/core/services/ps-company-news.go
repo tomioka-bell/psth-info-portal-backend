@@ -113,6 +113,26 @@ func (s *CompanyNewsService) GetCompanyNewsByTitle(title string) (models.Company
 	return jobReq, nil
 }
 
+func (s *CompanyNewsService) GetCompanyNewsByID(id string) (models.CompanyNewsReq, error) {
+	job, err := s.companyNewsRepo.GetCompanyNewsByID(id)
+	if err != nil {
+		return models.CompanyNewsReq{}, err
+	}
+
+	jobReq := models.CompanyNewsReq{
+		CompanyNewsID:    job.CompanyNewsID,
+		CompanyNewsPhoto: job.CompanyNewsPhoto,
+		Title:            job.Title,
+		Content:          job.Content,
+		Category:         job.Category,
+		UsernameCreator:  job.UsernameCreator,
+		CreatedAt:        job.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt:        job.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
+
+	return jobReq, nil
+}
+
 func (s *CompanyNewsService) UpdateCompanyNewsService(companyNewsID string, req models.CompanyNewsResp) error {
 	log.Printf("[UpdateCompanyNewsService] Starting update for ID: %s\n", companyNewsID)
 	log.Printf("[UpdateCompanyNewsService] Request data: %+v\n", req)

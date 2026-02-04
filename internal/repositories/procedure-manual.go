@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"errors"
-	"fmt"
 
 	"gorm.io/gorm"
 
@@ -14,9 +13,9 @@ type ProcedureManualRepository struct {
 }
 
 func NewProcedureManualRepository(db *gorm.DB) *ProcedureManualRepository {
-	if err := db.AutoMigrate(&domains.ProcedureManual{}); err != nil {
-		fmt.Printf("failed to auto migrate: %v", err)
-	}
+	// if err := db.AutoMigrate(&domains.ProcedureManual{}); err != nil {
+	// 	fmt.Printf("failed to auto migrate: %v", err)
+	// }
 	return &ProcedureManualRepository{db: db}
 }
 

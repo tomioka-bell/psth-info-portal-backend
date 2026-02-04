@@ -24,8 +24,11 @@ func (s *userService) SignInEmployee(dto models.LoginEmpResp) (string, error) {
 
 	ldapUser := ldapResp.UserInfo[0]
 
-	if ldapUser.AD_AccountStatus != "ENABLE" {
-		return "", errors.New("บัญชีนี้ถูกปิดการใช้งาน")
+	dbUserOld, err := s.userisrRepo.GetEmployeeByEmpCode(ldapUser.EmployeeCode)
+	if err == nil && dbUserOld != nil {
+		if dbUserOld.StatusLogin != "ENABLE" {
+			return "", errors.New("This account has been suspended. Please contact your system administrator.")
+		}
 	}
 
 	dbUser := models.PSEmployee{
@@ -46,11 +49,19 @@ func (s *userService) SignInEmployee(dto models.LoginEmpResp) (string, error) {
 		UHR_OrgGroup:        ldapUser.OrgGroup,
 		UHR_OrgName:         ldapUser.OrgName,
 		UHR_GroupDepartment: ldapUser.GroupDept,
-		Role:                "user",
+		StatusLogin:         "ENABLE",
+	}
+
+	// If user already exists in the system, keep their existing role
+	// Otherwise, set default role as "USER"
+	if dbUserOld != nil {
+		dbUser.Role = dbUserOld.Role
+	} else {
+		dbUser.Role = "USER"
 	}
 
 	if err := s.userisrRepo.SaveOrUpdateEmployee(&dbUser); err != nil {
-		return "", errors.New("เกิดข้อผิดพลาดในการเก็บข้อมูล: " + err.Error())
+		return "", errors.New("An error occurred while saving data: " + err.Error())
 	}
 
 	jwtSecretKey := []byte(os.Getenv("TOKEN_SECRET_KEY"))
@@ -60,15 +71,16 @@ func (s *userService) SignInEmployee(dto models.LoginEmpResp) (string, error) {
 		"firstname": dbUser.UHR_FirstName_en,
 		"lastname":  dbUser.UHR_LastName_en,
 		"role":      dbUser.Role,
-		"status":    dbUser.AD_AccountStatus,
+		"status":    dbUser.StatusLogin,
 		"iat":       time.Now().Unix(),
+		"img_url":   fmt.Sprintf("http://psth-hrservice:5020/api/v1/hrs/images/employee/%s.jpg", dbUser.UHR_EmpCode),
 		"exp":       time.Now().Add(time.Hour * 24).Unix(),
 	}
 
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, err := jwtToken.SignedString(jwtSecretKey)
 	if err != nil {
-		return "", errors.New("เกิดข้อผิดพลาดในการเซ็นชื่อ JWT")
+		return "", errors.New("An error occurred while signing the JWT")
 	}
 
 	return signedToken, nil
@@ -122,6 +134,36 @@ func (s *userService) GetAllEmployeesService() ([]models.EmployeeViewResp, error
 			UHR_OrgGroup:        user.UHR_OrgGroup,
 			UHR_OrgName:         user.UHR_OrgName,
 			ImageURL:            fmt.Sprintf("http://psth-hrservice:5020/api/v1/hrs/images/employee/%s.jpg", user.UHR_EmpCode),
+		}
+		employeeResps = append(employeeResps, empResp)
+	}
+
+	return employeeResps, nil
+}
+
+func (s *userService) GetEmployeesAdminService() ([]models.EmployeeAdminResp, error) {
+	employees, err := s.userisrRepo.GetEmployeesAdmin()
+	if err != nil {
+		return nil, err
+	}
+
+	var employeeResps []models.EmployeeAdminResp
+	for _, user := range employees {
+		empResp := models.EmployeeAdminResp{
+			UHR_EmpCode:         user.UHR_EmpCode,
+			UHR_FirstName_en:    user.UHR_FirstName_en,
+			UHR_FullNameTh:      user.UHR_FullNameTh,
+			UHR_FullNameEn:      user.UHR_FullNameEn,
+			UHR_LastName_en:     user.UHR_LastName_en,
+			UHR_Department:      user.UHR_Department,
+			AD_UserLogon:        user.AD_UserLogon,
+			AD_Mail:             user.AD_Mail,
+			AD_AccountStatus:    user.AD_AccountStatus,
+			UHR_Position:        user.UHR_Position,
+			UHR_GroupDepartment: user.UHR_GroupDepartment,
+			UHR_Phone:           user.UHR_Phone,
+			Role:                user.Role,
+			StatusLogin:         user.StatusLogin,
 		}
 		employeeResps = append(employeeResps, empResp)
 	}
