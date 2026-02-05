@@ -50,7 +50,7 @@ func (h *UserHandler) LoginDBHandler(c *fiber.Ctx) error {
 	})
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"Login": "เข้าสู่ระบบสำเร็จ",
+		"Login": "Login successful",
 	})
 }
 
@@ -70,7 +70,7 @@ func (h *UserHandler) LoginHandler(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "เข้าสู่ระบบสำเร็จ",
+		"message": "Login successful",
 		"token":   token,
 	})
 }

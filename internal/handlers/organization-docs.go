@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -70,10 +71,16 @@ func (h *OrganizationDocHandler) GetAllOrganizationDocHandler(c *fiber.Ctx) erro
 // Get organization docs by department
 func (h *OrganizationDocHandler) GetOrganizationDocByDepartmentHandler(c *fiber.Ctx) error {
 	department := c.Params("department")
+	// Decode URL-encoded parameter (e.g., Company%20Organization -> Company Organization)
+	decodedDept, err := url.QueryUnescape(department)
+	if err != nil {
+		decodedDept = department // Fallback to original if decode fails
+	}
+
 	limit := c.QueryInt("limit", 50)
 	offset := c.QueryInt("offset", 0)
 
-	docs, err := h.OrganizationDocSrv.GetOrganizationDocByDepartmentService(department, limit, offset)
+	docs, err := h.OrganizationDocSrv.GetOrganizationDocByDepartmentService(decodedDept, limit, offset)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch organization docs",
