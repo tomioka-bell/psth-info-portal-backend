@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -53,11 +54,23 @@ func (s *userService) SignInEmployee(dto models.LoginEmpResp) (string, error) {
 	}
 
 	// If user already exists in the system, keep their existing role
-	// Otherwise, set default role as "USER"
+	// Otherwise, set role based on department or default to "USER"
 	if dbUserOld != nil {
 		dbUser.Role = dbUserOld.Role
 	} else {
-		dbUser.Role = "USER"
+		dept := strings.TrimSpace(dbUser.UHR_Department)
+		switch dept {
+		case "Information Technology":
+			dbUser.Role = "SU"
+		case "HR&GA":
+			dbUser.Role = "HR"
+		case "Safety & Environment":
+			dbUser.Role = "SAFETY"
+		case "Sales":
+			dbUser.Role = "SALES"
+		default:
+			dbUser.Role = "USER"
+		}
 	}
 
 	if err := s.userisrRepo.SaveOrUpdateEmployee(&dbUser); err != nil {

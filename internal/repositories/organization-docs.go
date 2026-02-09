@@ -42,11 +42,12 @@ func (r *OrganizationDocRepository) GetAllOrganizationDocs(limit, offset int) ([
 	var docs []domains.OrganizationDoc
 	var total int64
 
+	// Return all organization docs (no pagination for now)
 	if err := r.db.Model(&domains.OrganizationDoc{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	if err := r.db.Limit(limit).Offset(offset).Order("created_at DESC").Find(&docs).Error; err != nil {
+	if err := r.db.Order("created_at DESC").Find(&docs).Error; err != nil {
 		return nil, 0, err
 	}
 

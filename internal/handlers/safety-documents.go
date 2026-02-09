@@ -26,7 +26,7 @@ func (h *SafetyDocumentHandler) CreateSafetyDocumentHandler(c *fiber.Ctx) error 
 	relPath, _, err := uploader.UploadFromForm(c, "file", uploader.Options{
 		Dir:          "./uploads/safety_documents",
 		AllowedMIMEs: []string{"application/pdf"},
-		MaxSize:      50 << 20, // 50MB
+		MaxSize:      50 << 20,
 		BaseURL:      "",
 		Required:     true,
 	})
