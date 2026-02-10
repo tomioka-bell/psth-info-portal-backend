@@ -20,6 +20,7 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 	api.Mount("/organization", routes.RoutesOrganization(db))
 	api.Mount("/app-system", routes.RoutesAppSystem(db))
 	api.Mount("/procedure-manual", routes.RoutesProcedureManual(db))
+	api.Mount("/qms-documents", routes.RoutesQmsDocuments(db))
 	api.Mount("/customer-manual", routes.RoutesCustomerManual(db))
 	api.Mount("/organization-docs", routes.RoutesOrganizationDoc(db))
 	api.Mount("/safety-documents", routes.RoutesSafetyDocument(db))
