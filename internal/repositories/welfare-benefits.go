@@ -69,6 +69,22 @@ func (r *WelfareBenefitRepository) GetWelfareBenefitsByCategory(category string,
 	return benefits, total, nil
 }
 
+// GetAllWelfareBenefitsNoPagination returns all welfare benefits without limit/offset
+func (r *WelfareBenefitRepository) GetAllWelfareBenefitsNoPagination() ([]domains.WelfareBenefit, int64, error) {
+	var benefits []domains.WelfareBenefit
+	var total int64
+
+	if err := r.db.Model(&domains.WelfareBenefit{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := r.db.Order("created_at DESC").Find(&benefits).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return benefits, total, nil
+}
+
 // UpdateWelfareBenefit updates an existing welfare benefit
 func (r *WelfareBenefitRepository) UpdateWelfareBenefit(id int, updates map[string]interface{}) error {
 	if err := r.db.Model(&domains.WelfareBenefit{}).Where("welfare_benefit_id = ?", id).Updates(updates).Error; err != nil {
@@ -103,4 +119,13 @@ func (r *WelfareBenefitRepository) SearchWelfareBenefits(keyword string, limit, 
 	}
 
 	return benefits, total, nil
+}
+
+// GetWelfareBenefitsCount returns the total number of welfare benefits
+func (r *WelfareBenefitRepository) GetWelfareBenefitsCount() (int64, error) {
+	var total int64
+	if err := r.db.Model(&domains.WelfareBenefit{}).Count(&total).Error; err != nil {
+		return 0, err
+	}
+	return total, nil
 }

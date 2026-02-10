@@ -225,6 +225,42 @@ func (s *WelfareBenefitService) SearchWelfareBenefits(keyword string, limit, off
 	}, nil
 }
 
+// Get all welfare benefits without pagination (service helper)
+func (s *WelfareBenefitService) GetAllWelfareBenefitsNoPagination() (*models.WelfareBenefitListResponse, error) {
+	benefits, total, err := s.repo.GetAllWelfareBenefitsNoPagination()
+	if err != nil {
+		return nil, err
+	}
+
+	var responses []models.WelfareBenefitResponse
+	for _, benefit := range benefits {
+		responses = append(responses, models.WelfareBenefitResponse{
+			WelfareBenefitID: benefit.WelfareBenefitID,
+			Title:            benefit.Title,
+			ImageURL:         benefit.ImageURL,
+			Description:      benefit.Description,
+			Category:         benefit.Category,
+			FileName:         benefit.FileName,
+			CreatedAt:        benefit.CreatedAt,
+			UpdatedAt:        benefit.UpdatedAt,
+		})
+	}
+
+	return &models.WelfareBenefitListResponse{
+		Data:       responses,
+		Total:      total,
+		Page:       1,
+		PageSize:   int(total),
+		TotalPages: 1,
+	}, nil
+}
+
+// Get total count of welfare benefits
+func (s *WelfareBenefitService) GetWelfareBenefitsCount() (int64, error) {
+	// delegate to repository count
+	return s.repo.GetWelfareBenefitsCount()
+}
+
 // ===== Port Interface Implementation =====
 
 // CreateWelfareBenefitService implements the port interface
@@ -235,11 +271,10 @@ func (s *WelfareBenefitService) CreateWelfareBenefitService(req models.CreateWel
 
 // GetAllWelfareBenefitService implements the port interface
 func (s *WelfareBenefitService) GetAllWelfareBenefitService(page, pageSize int) (*models.WelfareBenefitListResponse, error) {
-	if page < 1 {
-		page = 1
-	}
-	offset := (page - 1) * pageSize
-	return s.GetAllWelfareBenefits(pageSize, offset)
+	// Return all welfare benefits (no pagination).
+	// Ignore incoming page/pageSize and fetch all records.
+	const largeLimit = 1000000
+	return s.GetAllWelfareBenefits(largeLimit, 0)
 }
 
 // GetWelfareBenefitByIDService implements the port interface
@@ -254,6 +289,11 @@ func (s *WelfareBenefitService) GetWelfareBenefitByCategoryService(category stri
 	}
 	offset := (page - 1) * pageSize
 	return s.GetWelfareBenefitByCategory(category, pageSize, offset)
+}
+
+// GetAllWelfareBenefitsNoPaginationService implements the port interface
+func (s *WelfareBenefitService) GetAllWelfareBenefitsNoPaginationService() (*models.WelfareBenefitListResponse, error) {
+	return s.GetAllWelfareBenefitsNoPagination()
 }
 
 // UpdateWelfareBenefitService implements the port interface
@@ -274,4 +314,9 @@ func (s *WelfareBenefitService) SearchWelfareBenefitService(keyword string, page
 	}
 	offset := (page - 1) * pageSize
 	return s.SearchWelfareBenefits(keyword, pageSize, offset)
+}
+
+// GetWelfareBenefitsCountService implements the port interface
+func (s *WelfareBenefitService) GetWelfareBenefitsCountService() (int64, error) {
+	return s.GetWelfareBenefitsCount()
 }

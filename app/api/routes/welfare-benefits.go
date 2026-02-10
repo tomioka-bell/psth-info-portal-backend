@@ -22,6 +22,7 @@ func RoutesWelfareBenefit(db *gorm.DB) *fiber.App {
 
 	app.Post("/create", WelfareBenefitHandler.CreateWelfareBenefitHandler)
 	app.Get("/list", WelfareBenefitHandler.GetAllWelfareBenefitHandler)
+	app.Get("/count", WelfareBenefitHandler.GetWelfareBenefitsCountHandler)
 	app.Get("/category/:category", WelfareBenefitHandler.GetWelfareBenefitByCategoryHandler)
 	app.Put("/update/:welfare_benefit_id", WelfareBenefitHandler.UpdateWelfareBenefitHandler)
 	app.Delete("/delete/:welfare_benefit_id", WelfareBenefitHandler.DeleteWelfareBenefitHandler)

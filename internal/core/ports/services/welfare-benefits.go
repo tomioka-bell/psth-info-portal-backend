@@ -7,6 +7,10 @@ type WelfareBenefitService interface {
 	GetAllWelfareBenefitService(page, pageSize int) (*models.WelfareBenefitListResponse, error)
 	GetWelfareBenefitByIDService(id int) (*models.WelfareBenefitResponse, error)
 	GetWelfareBenefitByCategoryService(category string, page, pageSize int) (*models.WelfareBenefitListResponse, error)
+	// Get all welfare benefits without pagination
+	GetAllWelfareBenefitsNoPaginationService() (*models.WelfareBenefitListResponse, error)
+	// Get total count of welfare benefits in the system
+	GetWelfareBenefitsCountService() (int64, error)
 	UpdateWelfareBenefitService(id int, req models.UpdateWelfareBenefitRequest) error
 	DeleteWelfareBenefitService(id int) error
 	SearchWelfareBenefitService(keyword string, page, pageSize int) (*models.WelfareBenefitListResponse, error)

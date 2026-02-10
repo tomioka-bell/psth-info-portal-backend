@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -96,11 +97,35 @@ func (h *WelfareBenefitHandler) GetAllWelfareBenefitHandler(c *fiber.Ctx) error 
 	return c.Status(http.StatusOK).JSON(benefits)
 }
 
+// Get total welfare benefits count
+func (h *WelfareBenefitHandler) GetWelfareBenefitsCountHandler(c *fiber.Ctx) error {
+	total, err := h.WelfareBenefitSrv.GetWelfareBenefitsCountService()
+	if err != nil {
+		log.Printf("[GetWelfareBenefitsCountHandler] error: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get welfare benefits count"})
+	}
+
+	return c.Status(http.StatusOK).JSON(fiber.Map{"total": total})
+}
+
 // Get welfare benefits by category
 func (h *WelfareBenefitHandler) GetWelfareBenefitByCategoryHandler(c *fiber.Ctx) error {
 	category := c.Params("category")
-	limit := c.QueryInt("limit", 50)
+	limit := c.QueryInt("limit", 250)
 	offset := c.QueryInt("offset", 0)
+
+	// If user requests "all-employee" (case-insensitive), return full list
+	if strings.TrimSpace(strings.ToLower(category)) == "all-employee" {
+		fmt.Println("เข้าเงื่อนไข")
+		benefits, err := h.WelfareBenefitSrv.GetAllWelfareBenefitsNoPaginationService()
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to fetch welfare benefits",
+			})
+		}
+
+		return c.Status(http.StatusOK).JSON(benefits)
+	}
 
 	benefits, err := h.WelfareBenefitSrv.GetWelfareBenefitByCategoryService(category, limit, offset)
 	if err != nil {
